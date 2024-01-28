@@ -1,5 +1,5 @@
-This is a snake game made with Vue3 and Typescript
-ToDO's:
+# This is a snake game made with Vue3 and Typescript
+# ToDO's:
 - Fix Collision detection with snake itself (collision detection currently works for map boundaries)
 - Exclude snake itself from random food rendering
 - Reset game logic
