@@ -1,3 +1,9 @@
+This is a snake game made with Vue3 and Typescript
+ToDO's:
+- Fix Collision detection with snake itself (collision detection currently works for map boundaries)
+- Exclude snake itself from random food rendering
+- Reset game logic
+
 # snake-vue
 
 This template should help get you started developing with Vue 3 in Vite.
