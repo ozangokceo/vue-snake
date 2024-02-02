@@ -1,8 +1,57 @@
 <template>
   <div style="display: flex; flex-direction: column; gap: 7px">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; width: min-content">
+        <div></div>
+        <v-btn
+          :disabled="Boolean(timerId)"
+          style="width: 16px"
+          color="primary"
+          @click="advanceFrame('up')"
+          >Up</v-btn
+        >
+        <div></div>
+        <v-btn
+          :disabled="Boolean(timerId)"
+          style="width: 16px"
+          color="primary"
+          @click="advanceFrame('left')"
+          >L</v-btn
+        >
+        <div></div>
+        <v-btn
+          :disabled="Boolean(timerId)"
+          style="width: 16px"
+          color="primary"
+          @click="advanceFrame('right')"
+          >R</v-btn
+        >
+        <div></div>
+        <v-btn
+          :disabled="Boolean(timerId)"
+          style="width: 16px"
+          color="primary"
+          @click="advanceFrame('down')"
+          >Dn</v-btn
+        >
+        <div></div>
+      </div>
+
+      <div style="display: flex; flex-direction: column">
+        <div style="display: flex; align-items: center">
+          <v-checkbox hide-details label="Show grid" v-model="showGrid"></v-checkbox>:
+          {{ showGrid }}
+        </div>
+        <div style="display: flex; align-items: center">
+          <v-checkbox hide-details label="Mark head" v-model="markHead"></v-checkbox>:
+          {{ markHead }}
+        </div>
+      </div>
+    </div>
+
     <div style="display: flex; gap: 7px">
-      <v-btn variant="outlined" color="primary" @click="startCanvas">Start</v-btn>
-      <v-btn color="warning" @click="stop">Stop</v-btn>
+      <v-btn v-if="!timerId" variant="outlined" color="primary" @click="startCanvas">Start</v-btn>
+      <v-btn v-else color="warning" @click="stop">Stop</v-btn>
       <v-btn color="secondary" @click="reset()">Reset</v-btn>
       <v-select
         v-model="foodLogo"
@@ -30,8 +79,6 @@
 
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
-
-type Collision = { didCollide: false } | { didCollide: true; event: string }
 
 type Direction = Up | Down | Left | Right
 
@@ -83,13 +130,16 @@ const y = ref<number>(SNAKE_START.y)
 const foodX = ref<number>(0)
 const foodY = ref<number>(0)
 
-const direction = ref<Direction>({ x: 1, y: 0 })
+const direction = ref<Direction>({ x: -1, y: 0 })
 
 const timerId = ref<number | null>(null)
 
 const gameState = ref<GameState>('init')
 
 const gameScore = ref<number>(0)
+
+const showGrid = ref<boolean>(false)
+const markHead = ref<boolean>(false)
 
 const foodLogo = ref<string>('vue-logo')
 
@@ -102,6 +152,26 @@ function init() {
   initCanvas()
 
   window.addEventListener('keydown', changeDirection)
+}
+
+function advanceFrame(direction: 'up' | 'down' | 'left' | 'right') {
+  switch (direction) {
+    case 'up':
+      y.value -= ELEMENT_HEIGHT
+      break
+    case 'down':
+      y.value += ELEMENT_HEIGHT
+      break
+    case 'left':
+      x.value -= ELEMENT_WIDTH
+      break
+    case 'right':
+      x.value += ELEMENT_WIDTH
+      break
+  }
+
+  incrementSnake(x.value, y.value)
+  drawCanvas(true)
 }
 
 function changeDirection(e: KeyboardEvent) {
@@ -157,8 +227,9 @@ function renderFood() {
 
 function buildSnake() {
   const snake: Snake = []
+  const initialLength = 10
 
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < initialLength; i++) {
     snake.push({
       x: SNAKE_START.x + ELEMENT_WIDTH * i,
       y: SNAKE_START.y,
@@ -188,29 +259,27 @@ function updateSnake(x: number, y: number) {
   snake.value.shift()
 }
 
-function checkCollision(): Collision {
-  if (x.value + ELEMENT_WIDTH >= CANVAS_WIDTH || x.value < 0)
-    return { didCollide: true, event: 'collision x!!' }
-  if (y.value + ELEMENT_HEIGHT >= CANVAS_HEIGHT || y.value < 0)
-    return { didCollide: true, event: 'collision y!!' }
+function checkCollision(): boolean {
+  let collision: boolean = false
 
-  snake.value.forEach((snakeElement, index, array) => {
-    const didCollide =
-      (x.value + ELEMENT_WIDTH === snakeElement.x || x.value - ELEMENT_WIDTH === snakeElement.x) &&
-      (y.value + ELEMENT_HEIGHT === snakeElement.y || y.value - ELEMENT_HEIGHT === snakeElement.y)
+  if (x.value + ELEMENT_WIDTH >= CANVAS_WIDTH || x.value < 0) return true
+  if (y.value + ELEMENT_HEIGHT >= CANVAS_HEIGHT || y.value < 0) return true
 
-    /*
-      const divX = document.querySelector('.x')
-      const divY = document.querySelector('.y')
+  for (const snakeElement of snake.value) {
+    if (x.value === snakeElement.x && y.value === snakeElement.y) collision = false
 
-      if (x.value + ELEMENT_WIDTH === snakeElement.x || x.value - ELEMENT_WIDTH === snakeElement.x) divX?.classList.add('red')
-      if (y.value + ELEMENT_WIDTH === snakeElement.y || y.value - ELEMENT_WIDTH === snakeElement.y) divY?.classList.add('red')
-      */
+    const xDiff = Math.abs(x.value - snakeElement.x)
+    const yDiff = Math.abs(y.value - snakeElement.y)
 
-    return { didCollide, event: 'self collision!!' }
-  })
+    // console.log(xDiff, yDiff)
 
-  return { didCollide: false }
+    const didCollide = xDiff === 0 && yDiff === 0
+
+    collision = didCollide
+  }
+
+  if (collision) console.warn('Collision!!')
+  return false
 }
 
 function initCanvas() {
@@ -233,30 +302,30 @@ function resetCanvas() {
 }
 
 function reset() {
+  stop()
+
   window.removeEventListener('keypress', changeDirection)
+
+  timerId.value = null
 
   gameState.value = 'init'
 
   x.value = SNAKE_START.x
   y.value = SNAKE_START.y
 
-  stop()
   resetCanvas()
 
   snake.value = buildSnake()
 }
 
-function drawCanvas() {
+function drawCanvas(frame?: boolean) {
   if (!canvas || !ctx) return
   // console.log('Draw call..')
 
   resetCanvas()
 
-  // Collision detections..
-  const collision: Collision = checkCollision()
-
-  if (collision.didCollide) {
-    reset()
+  if (checkCollision()) {
+    // reset()
     gameState.value = 'gameover'
   }
 
@@ -268,22 +337,30 @@ function drawCanvas() {
   renderFood()
 
   updateSnake(x.value, y.value)
+
   ctx.fillStyle = 'white'
 
   snake.value.forEach((snakeElement) => {
+    if (markHead.value && x.value === snakeElement.x && y.value === snakeElement.y) {
+      ctx!.fillStyle = 'green'
+    }
+
     if (ctx) ctx.fillRect(snakeElement.x, snakeElement.y, ELEMENT_WIDTH, ELEMENT_HEIGHT)
   })
+
+  if (frame) return
 
   x.value += direction.value.x * ELEMENT_WIDTH
   y.value += direction.value.y * ELEMENT_HEIGHT
 }
 
 function startCanvas() {
-  timerId.value = setInterval(drawCanvas, 70)
+  timerId.value = setInterval(drawCanvas, 200)
 }
 
 function stop() {
   if (timerId.value) clearInterval(timerId.value)
+  timerId.value = null
 }
 
 // Computed
