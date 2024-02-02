@@ -38,18 +38,47 @@
       </div>
 
       <div style="display: flex; flex-direction: column">
-        <div style="display: flex; align-items: center">
-          <v-checkbox hide-details label="Show grid" v-model="showGrid"></v-checkbox>:
-          {{ showGrid }}
-        </div>
-        <div style="display: flex; align-items: center">
-          <v-checkbox hide-details label="Mark head" v-model="markHead"></v-checkbox>:
-          {{ markHead }}
-        </div>
-        <div style="display: flex; align-items: center">
-          <v-checkbox hide-details label="Head axis" v-model="showSnakeHeadAxis"></v-checkbox>:
-          {{ showSnakeHeadAxis }}
-        </div>
+        <v-tooltip text="Toggles the grid on canvas" location="bottom">
+          <template v-slot:activator="{ props: _props }">
+            <v-checkbox
+              density="compact"
+              v-model="showGrid"
+              v-bind="_props"
+              hide-details
+              label="Show grid"
+            ></v-checkbox>
+          </template>
+        </v-tooltip>
+
+        <v-tooltip
+          text="Paints the snake head to a different color"
+          location="bottom"
+        >
+          <template v-slot:activator="{ props: _props }">
+            <v-checkbox
+              density="compact"
+              v-model="markHead"
+              v-bind="_props"
+              hide-details
+              label="Mark head"
+            ></v-checkbox>
+          </template>
+        </v-tooltip>
+
+        <v-tooltip
+          text="Toggles coordinate guidelines for snake head and displays realtime coordinates"
+          location="bottom"
+        >
+          <template v-slot:activator="{ props: _props }">
+            <v-checkbox
+              density="compact"
+              v-bind="_props"
+              hide-details
+              label="Head axis"
+              v-model="showSnakeHeadAxis"
+            ></v-checkbox>
+          </template>
+        </v-tooltip>
       </div>
     </div>
 
@@ -69,6 +98,9 @@
     <div class="container">
       <div class="scoreboard">
         <span style="font-weight: 500">Score:</span>&nbsp;{{ gameScore }}
+      </div>
+      <div v-if="showSnakeHeadAxis" class="coordinates">
+        <span>xCoord:</span>&nbsp;{{ x }} - <span>yCoord:</span>&nbsp;{{ y }}
       </div>
       <canvas></canvas>
       <div v-if="gameState === 'gameover'" class="message-backdrop">
@@ -162,42 +194,39 @@ let context: CanvasRenderingContext2D | null;
 function init() {
   initCanvas();
 
-  const gamepads = navigator.getGamepads();
-  // console.log('Gamepads: ', gamepads);
-
   window.addEventListener('keydown', changeDirection);
 }
 
-function advanceFrame(direction: 'up' | 'down' | 'left' | 'right') {
-  switch (direction) {
+function advanceFrame(advanceDirection: 'up' | 'down' | 'left' | 'right') {
+  switch (advanceDirection) {
     case 'up':
-      y.value -= ELEMENT_HEIGHT;
+      direction.value = { x: 0, y: -1 };
       break;
     case 'down':
-      y.value += ELEMENT_HEIGHT;
+      direction.value = { x: 0, y: 1 };
       break;
     case 'left':
-      x.value -= ELEMENT_WIDTH;
+      direction.value = { x: -1, y: 0 };
       break;
     case 'right':
-      x.value += ELEMENT_WIDTH;
+      direction.value = { x: 1, y: 0 };
       break;
   }
 
-  incrementSnake(x.value, y.value);
-  drawCanvas(0, true);
+  updateSnake(x.value, y.value);
+  drawCanvas(0);
 }
 
 function changeDirection(e: KeyboardEvent) {
   console.log(e.key);
   switch (e.key) {
-    case 'ArrowDown':
-      if (direction.value.y === -1) break;
-      direction.value = { x: 0, y: 1 };
-      break;
     case 'ArrowUp':
       if (direction.value.y === 1) break;
       direction.value = { x: 0, y: -1 };
+      break;
+    case 'ArrowDown':
+      if (direction.value.y === -1) break;
+      direction.value = { x: 0, y: 1 };
       break;
     case 'ArrowLeft':
       if (direction.value.x === 1) break;
@@ -245,9 +274,9 @@ function renderFood() {
 
 function buildSnake() {
   const snake: Snake = [];
-  const initialLength = 10;
+  const initialLength = 12;
 
-  for (let i = 0; i < initialLength; i++) {
+  for (let i = initialLength; i > 0; i--) {
     snake.push({
       x: SNAKE_START.x + ELEMENT_WIDTH * i,
       y: SNAKE_START.y,
@@ -279,8 +308,6 @@ function getFoodCoordinates(): { x: number; y: number } {
 
   const x = Math.floor(coordinateX / ELEMENT_WIDTH) * ELEMENT_WIDTH;
   const y = Math.floor(coordinateY / ELEMENT_HEIGHT) * ELEMENT_HEIGHT;
-
-  console.log('food: ', x, y);
 
   return { x, y };
 }
@@ -327,6 +354,7 @@ function initCanvas() {
   canvas.height = CANVAS_HEIGHT;
 
   updateFood();
+  drawCanvas(0);
 }
 
 function resetCanvas() {
@@ -351,6 +379,7 @@ function reset() {
   y.value = SNAKE_START.y;
 
   resetCanvas();
+  drawCanvas(0);
 
   snake.value = buildSnake();
 }
@@ -384,7 +413,7 @@ function drawCanvas(timestamp: number, frame?: boolean) {
     if (context) context.fillRect(snakeElement.x, snakeElement.y, ELEMENT_WIDTH, ELEMENT_HEIGHT);
   });
 
-  if (frame) return;
+  // if (frame) return;
 
   x.value += direction.value.x * ELEMENT_WIDTH;
   y.value += direction.value.y * ELEMENT_HEIGHT;
@@ -406,8 +435,8 @@ function paintGrid() {
 
   for (let i = 0; i < CANVAS_WIDTH; i++) {
     for (let j = 0; j < CANVAS_HEIGHT; j++) {
-      if (i % ELEMENT_WIDTH === 0 || i === CANVAS_WIDTH - 1) context.fillRect(i, j, 1, 1)
-      if (j % ELEMENT_WIDTH === 0 || j === CANVAS_HEIGHT - 1) context.fillRect(i, j, 1, 1)
+      if (i % ELEMENT_WIDTH === 0 || i === CANVAS_WIDTH - 1) context.fillRect(i, j, 1, 1);
+      if (j % ELEMENT_WIDTH === 0 || j === CANVAS_HEIGHT - 1) context.fillRect(i, j, 1, 1);
     }
   }
 }
@@ -418,7 +447,7 @@ function paintHeadAxis() {
 
   for (let i = 0; i < CANVAS_WIDTH; i++) {
     for (let j = 0; j < CANVAS_HEIGHT; j++) {
-      if (i === x.value || j === y.value) context.fillRect(i, j, 1, 1)
+      if (i === x.value || j === y.value) context.fillRect(i, j, 1, 1);
     }
   }
 }
@@ -456,7 +485,9 @@ onMounted(() => {
   init();
 });
 
-watch(showGrid, () => drawCanvas(0))
+watch(showGrid, () => drawCanvas(0));
+watch(showSnakeHeadAxis, () => drawCanvas(0));
+watch(markHead, () => drawCanvas(0));
 </script>
 
 <style scoped>
@@ -481,6 +512,15 @@ watch(showGrid, () => drawCanvas(0))
   top: 5px;
   left: 10px;
   font-size: 18px;
+  color: white;
+}
+
+.coordinates {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  font-size: 18px;
+  color: green;
 }
 
 .debug-container {
