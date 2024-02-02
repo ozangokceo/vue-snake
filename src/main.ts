@@ -6,6 +6,8 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 
+import { RegisterGlobalComponentsPlugin } from "./plugins/register-components.plugin";
+
 // Vuetify
 import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
@@ -17,7 +19,7 @@ const vuetify = createVuetify({
   directives,
 })
 
-const app = createApp(App)
+const app = createApp(App).use(RegisterGlobalComponentsPlugin)
 
 app.use(createPinia())
 app.use(router)

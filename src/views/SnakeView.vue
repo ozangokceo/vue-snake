@@ -1,9 +1,18 @@
 <script setup lang="ts">
-import TheSnake from '../components/TheSnake.vue'
 </script>
 
 <template>
   <main>
+    <ZetPanel />
     <TheSnake />
   </main>
 </template>
+
+<style scoped>
+main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px
+}
+</style>

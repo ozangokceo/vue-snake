@@ -1,37 +1,31 @@
 <template>
-  <div class="x">x: {{ x }}</div>
-  <div class="y">y: {{ y }}</div>
-  <div >foodX: {{ foodX }}</div>
-  <div>foodY: {{ foodY }}</div>
-  <div>CANVAS_WIDTH: {{ CANVAS_WIDTH }}</div>
-  <div>CANVAS_HEIGHT: {{ CANVAS_HEIGHT }}</div>
-  <div>direction: {{ direction }}</div>
-  <div>snake: {{ snake }}</div>
-  <div>foodLogo: {{ foodLogo }}</div>
-
-  <div style="display: flex; gap: 7px">
-    <v-btn variant="outlined" color="primary" @click="startCanvas">Start</v-btn>
-    <v-btn color="warning" @click="stop">Stop</v-btn>
-    <v-btn color="secondary" @click="reset()">Reset</v-btn>
-    <v-select
-      v-model="foodLogo"
-      hide-details
-      density="compact"
-      style="width: 300px"
-      :items="getIconItems"
-    ></v-select>
-  </div>
-  <!-- :style="{ width: `${CANVAS_WIDTH}px`, height: `${CANVAS_HEIGHT}px` }" -->
-  <div class="container">
-    <div class="scoreboard"><span style="font-weight: 500">Score:</span>&nbsp;{{ gameScore }}</div>
-    <canvas></canvas>
-    <div v-if="gameState === 'gameover'" class="message-backdrop">
-      <div class="message-popup">Game over!!</div>
+  <div style="display: flex; flex-direction: column; gap: 7px">
+    <div style="display: flex; gap: 7px">
+      <v-btn variant="outlined" color="primary" @click="startCanvas">Start</v-btn>
+      <v-btn color="warning" @click="stop">Stop</v-btn>
+      <v-btn color="secondary" @click="reset()">Reset</v-btn>
+      <v-select
+        v-model="foodLogo"
+        hide-details
+        density="compact"
+        style="width: 300px"
+        :items="getIconItems"
+      ></v-select>
     </div>
+
+    <div class="container">
+      <div class="scoreboard">
+        <span style="font-weight: 500">Score:</span>&nbsp;{{ gameScore }}
+      </div>
+      <canvas></canvas>
+      <div v-if="gameState === 'gameover'" class="message-backdrop">
+        <div class="message-popup">Game over!!</div>
+      </div>
+    </div>
+    <img v-show="false" id="vue-logo" src="@/assets/logo.svg" width="125" height="125" />
+    <img v-show="false" id="apple-logo" src="@/assets/apple.png" width="125" height="125" />
+    <img v-show="false" id="candle-logo" src="@/assets/candle.png" width="125" height="125" />
   </div>
-  <img v-show="false" id="vue-logo" src="@/assets/logo.svg" width="125" height="125" />
-  <img v-show="false" id="apple-logo" src="@/assets/apple.png" width="125" height="125" />
-  <img v-show="false" id="candle-logo" src="@/assets/candle.png" width="125" height="125" />
 </template>
 
 <script setup lang="ts">
@@ -205,14 +199,13 @@ function checkCollision(): Collision {
       (x.value + ELEMENT_WIDTH === snakeElement.x || x.value - ELEMENT_WIDTH === snakeElement.x) &&
       (y.value + ELEMENT_HEIGHT === snakeElement.y || y.value - ELEMENT_HEIGHT === snakeElement.y)
 
-/*
+    /*
       const divX = document.querySelector('.x')
       const divY = document.querySelector('.y')
 
       if (x.value + ELEMENT_WIDTH === snakeElement.x || x.value - ELEMENT_WIDTH === snakeElement.x) divX?.classList.add('red')
       if (y.value + ELEMENT_WIDTH === snakeElement.y || y.value - ELEMENT_WIDTH === snakeElement.y) divY?.classList.add('red')
       */
-
 
     return { didCollide, event: 'self collision!!' }
   })
