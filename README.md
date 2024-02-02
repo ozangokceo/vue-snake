@@ -10,6 +10,5 @@ Main component for game logic & page ==> src/components/TheSnake.vue
 # TO-DO's:
 - Fix Collision detection with snake itself (collision detection currently works for map boundaries)
 - Exclude snake itself from random food rendering
-- Reset game logic
 
 
